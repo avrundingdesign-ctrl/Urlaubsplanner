@@ -764,7 +764,8 @@
   <div class="header-actions">
     <button class="btn btn-ghost" id="btn-reset" title="Alles zurücksetzen">↺</button>
     <button class="btn btn-ghost" id="btn-fit" title="Ansicht zentrieren">⊡</button>
-    <button class="btn btn-primary" id="btn-share">⤴ <span>Teilen</span></button>
+    <button class="btn btn-primary" id="btn-add-root">＋ <span>Neue Frage</span></button>
+    <button class="btn" id="btn-share">⤴ <span>Teilen</span></button>
   </div>
 </header>
 
@@ -1480,9 +1481,8 @@ function escapeHtml(s) {
 }
 
 // ---------- Header buttons ----------
-$('#btn-add-root').onclick = () => {
+function addRootNode() {
   const rect = wrap.getBoundingClientRect();
-  // platzieren in sichtbarer Mitte
   const cx = (rect.width / 2 - viewport.x) / viewport.zoom;
   const cy = (rect.height / 2 - viewport.y) / viewport.zoom;
   const id = createNode({ x: cx - 140, y: cy - 100 });
@@ -1491,7 +1491,10 @@ $('#btn-add-root').onclick = () => {
     const el = document.querySelector(`.node[data-id="${id}"] .node-question`);
     if (el) el.focus();
   }, 50);
-};
+}
+
+$('#btn-add-root').onclick = addRootNode;
+$('#btn-start').onclick = addRootNode;
 
 $('#btn-fit').onclick = fitView;
 
