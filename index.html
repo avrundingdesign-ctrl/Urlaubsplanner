@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surf'n'Turf – Entscheidungsbaum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=JetBrains+Mono:wght@400;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f4f8fb;
+    --surface: #ffffff;
+    --surface-2: #eef4f9;
+    --line: #d8e2ea;
+    --line-soft: #e8eef3;
+    --grid: #e4ecf2;
+    --text: #0f2742;
+    --text-dim: #5a7591;
+    --text-faint: #9bb0c4;
+    --accent: #38b6ff;        /* himmelblau */
+    --accent-deep: #1a8fd9;
+    --accent-warm: #ff7e47;   /* korallrot — Surf'n'Turf-Akzent */
+    --sand: #f5e6c8;
+    --foam: #e6f4fc;
+    --danger: #e85a4f;
+    --shadow: 0 12px 40px -12px rgba(31, 87, 130, 0.18);
+    --shadow-soft: 0 4px 16px -4px rgba(31, 87, 130, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter Tight', sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    background-attachment: fixed;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.85) 70%, rgba(255,255,255,0) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Wellen-Hintergrund unter dem Header */
+  .header-wave {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 140px;
+    pointer-events: none;
+    z-index: 99;
+    overflow: hidden;
+  }
+  .header-wave svg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 101;
+  }
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 6px rgba(56, 182, 255, 0.25));
+  }
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+  .logo-mark {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo-mark .amp {
+    color: var(--accent-warm);
+    font-weight: 400;
+    margin: 0 1px;
+  }
+  .logo-mark .surf { color: var(--accent-deep); }
+  .logo-mark .turf { color: var(--text); }
+  .logo-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--shadow-soft);
+  }
+  .btn:hover {
+    background: var(--foam);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 4px 14px -2px rgba(56, 182, 255, 0.4);
+  }
+  .btn-primary:hover {
+    background: var(--accent-deep);
+    border-color: var(--accent-deep);
+    color: #ffffff;
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+    box-shadow: none;
+  }
+  .btn-ghost:hover {
+    color: var(--accent-deep);
+    background: var(--foam);
+    border-color: transparent;
+  }
+  .btn-danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn-icon {
+    padding: 8px;
+    width: 34px;
+    height: 34px;
+    justify-content: center;
+  }
+
+  /* ---------- Canvas ---------- */
+  #canvas-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #canvas-wrap.panning { cursor: grabbing; }
+
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  #svg-edges {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .edge-line {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 2;
+    transition: stroke 0.2s, stroke-width 0.2s;
+  }
+  .edge-line.active {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  .edge-label {
+    fill: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .edge-label-bg {
+    fill: #ffffff;
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .edge-label-bg.active {
+    stroke: var(--accent);
+    fill: var(--foam);
+  }
+
+  /* ---------- Nodes ---------- */
+  .node {
+    position: absolute;
+    width: 280px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .node:hover {
+    border-color: var(--accent);
+    box-shadow: 0 16px 44px -12px rgba(56, 182, 255, 0.25);
+  }
+  .node.root {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, #ffffff 0%, var(--foam) 100%);
+    border-width: 1.5px;
+  }
+
+  .node-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .node.root .node-tag { color: var(--accent-deep); }
+
+  .node-question {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 14px;
+    cursor: text;
+    outline: none;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin-left: -4px;
+  }
+  .node-question:focus {
+    background: var(--foam);
+  }
+  .node-question:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-faint);
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--bg-soft);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .option:hover {
+    border-color: var(--line);
+    background: var(--foam);
+  }
+  .option.voted {
+    border-color: var(--accent);
+    background: var(--foam);
+  }
+
+  .option-bar {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: rgba(56, 182, 255, 0.18);
+    transition: width 0.4s ease;
+    pointer-events: none;
+  }
+
+  .option-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    cursor: text;
+    outline: none;
+    border-radius: 3px;
+    padding: 1px 3px;
+    margin-left: -3px;
+    z-index: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
+  .option-text:focus {
+    background: #ffffff;
+    box-shadow: 0 0 0 2px var(--accent) inset;
+  }
+  .option-text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-faint);
+  }
+
+  .option-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    z-index: 1;
+    min-width: 24px;
+    text-align: right;
+  }
+  .option.voted .option-count { color: var(--accent-deep); }
+
+  .option-actions {
+    display: none;
+    z-index: 1;
+    gap: 2px;
+  }
+  .option:hover .option-actions { display: flex; }
+
+  .option-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .option-btn:hover {
+    color: var(--accent-deep);
+    background: #ffffff;
+  }
+  .option-btn.danger:hover { color: var(--danger); }
+
+  .node-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .mini-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mini-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: var(--foam);
+  }
+  .mini-btn.danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: #fff;
+  }
+
+  /* ---------- Zoom controls ---------- */
+  .zoom-controls {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+    z-index: 50;
+    box-shadow: var(--shadow-soft);
+  }
+  .zoom-controls button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .zoom-controls button:hover {
+    background: var(--foam);
+    color: var(--accent-deep);
+  }
+  .zoom-level {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-faint);
+    text-align: center;
+    padding: 2px 0;
+  }
+
+  /* ---------- Analytics panel ---------- */
+  .analytics {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 380px;
+    max-height: 60vh;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+    border-top-left-radius: 16px;
+    box-shadow: var(--shadow);
+    z-index: 50;
+    transform: translateY(calc(100% - 48px));
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+  }
+  .analytics.open { transform: translateY(0); }
+
+  .analytics-header {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    user-select: none;
+    background: linear-gradient(180deg, var(--foam) 0%, #ffffff 100%);
+    border-top-left-radius: 16px;
+  }
+  .analytics-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .analytics-title span { color: var(--accent-deep); }
+  .analytics-toggle {
+    color: var(--text-dim);
+    transition: transform 0.3s;
+  }
+  .analytics.open .analytics-toggle { transform: rotate(180deg); }
+
+  .analytics-content {
+    overflow-y: auto;
+    padding: 16px 20px 20px;
+    flex: 1;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .stat {
+    background: var(--bg-soft);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid var(--line-soft);
+  }
+  .stat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--accent-deep);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  .leader-section {
+    margin-top: 14px;
+  }
+  .leader-section h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .leader {
+    margin-bottom: 14px;
+  }
+  .leader-q {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .leader-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .leader-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-soft);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .leader-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s;
+  }
+  .leader-bar-fill.dim { background: var(--line); }
+  .leader-label {
+    color: var(--text-dim);
+    flex-shrink: 0;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .leader-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent-deep);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    box-shadow: var(--shadow);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---------- Empty state hint ---------- */
+  .hint {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 5;
+  }
+  .hint-btn {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    padding: 16px 28px;
+    border-radius: 12px;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px -4px rgba(56, 182, 255, 0.5);
+    transition: all 0.2s;
+  }
+  .hint-btn:hover {
+    background: var(--accent-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -4px rgba(56, 182, 255, 0.55);
+  }
+  .hint-text {
+    margin-top: 14px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 39, 66, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: var(--shadow);
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .modal p {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .modal input {
+    width: 100%;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin-bottom: 14px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 640px) {
+    header { padding: 14px 16px; }
+    .logo-sub { display: none; }
+    .btn span { display: none; }
+    .btn { padding: 9px 10px; }
+    .analytics { width: 100%; border-top-left-radius: 16px; border-top-right-radius: 16px; border-right: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <!-- Surfboard / Welle als Hintergrund -->
+      <defs>
+        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#7cd1ff"/>
+          <stop offset="100%" stop-color="#1a8fd9"/>
+        </linearGradient>
+        <linearGradient id="surfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#e6f4fc"/>
+        </linearGradient>
+      </defs>
+      <!-- Kreis-Hintergrund -->
+      <circle cx="32" cy="32" r="30" fill="url(#waveGrad)"/>
+      <!-- Schaum-Welle unten -->
+      <path d="M 4 44 Q 14 38, 22 42 T 40 42 T 60 42 L 60 64 L 4 64 Z" fill="#ffffff" opacity="0.9"/>
+      <path d="M 4 48 Q 14 44, 22 47 T 40 47 T 60 47 L 60 64 L 4 64 Z" fill="#e6f4fc"/>
+      <!-- Surfbrett (Welle reitend) -->
+      <ellipse cx="32" cy="28" rx="18" ry="5" fill="url(#surfGrad)" stroke="#1a8fd9" stroke-width="1.2" transform="rotate(-18 32 28)"/>
+      <!-- Gabel (Turf-Symbol) übers Brett -->
+      <g transform="translate(32 22) rotate(-18)" stroke="#0f2742" stroke-width="1.6" stroke-linecap="round" fill="none">
+        <line x1="0" y1="-8" x2="0" y2="6"/>
+        <line x1="-4" y1="-8" x2="-4" y2="-2"/>
+        <line x1="4" y1="-8" x2="4" y2="-2"/>
+        <line x1="-4" y1="-2" x2="4" y2="-2"/>
+      </g>
+    </svg>
+    <div class="logo-text">
+      <div class="logo-mark"><span class="surf">Surf</span><span class="amp">'n'</span><span class="turf">Turf</span></div>
+      <div class="logo-sub">entscheidungs · baum</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" id="btn-reset" title="Alles zurücksetzen">↺</button>
+    <button class="btn btn-ghost" id="btn-fit" title="Ansicht zentrieren">⊡</button>
+    <button class="btn btn-primary" id="btn-share">⤴ <span>Teilen</span></button>
+  </div>
+</header>
+
+<!-- dekorative Welle hinter dem Header -->
+<div class="header-wave" aria-hidden="true">
+  <svg viewBox="0 0 1440 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bgWave1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#7cd1ff" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#7cd1ff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="bgWave2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#38b6ff" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="#38b6ff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="M0,80 C240,120 480,40 720,70 C960,100 1200,50 1440,80 L1440,0 L0,0 Z" fill="url(#bgWave1)"/>
+    <path d="M0,100 C240,70 480,130 720,100 C960,70 1200,120 1440,95 L1440,0 L0,0 Z" fill="url(#bgWave2)"/>
+  </svg>
+</div>
+
+<div id="canvas-wrap">
+  <div id="canvas">
+    <svg id="svg-edges"></svg>
+  </div>
+</div>
+
+<div class="hint" id="hint" style="display:none;">
+  <button class="hint-btn" id="btn-start">+ Erste Frage erstellen</button>
+  <div class="hint-text">oder einen geteilten Link öffnen</div>
+</div>
+
+<div class="zoom-controls">
+  <button id="zoom-in" title="Reinzoomen">＋</button>
+  <div class="zoom-level" id="zoom-display">100%</div>
+  <button id="zoom-out" title="Rauszoomen">−</button>
+</div>
+
+<div class="analytics" id="analytics">
+  <div class="analytics-header" id="analytics-toggle">
+    <div class="analytics-title">gesamt<span>analyse</span></div>
+    <div class="analytics-toggle">▲</div>
+  </div>
+  <div class="analytics-content" id="analytics-content">
+    <!-- gefüllt durch JS -->
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <h3>Link teilen</h3>
+    <p>Kopiere diesen Link und schicke ihn an deine Kollegen. Sie sehen den exakt gleichen Stand und können mitstimmen oder editieren.</p>
+    <input type="text" id="share-url" readonly>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="share-close">Schließen</button>
+      <button class="btn btn-primary" id="share-copy">Kopieren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   URLAUBSBAUM – Entscheidungs-Umfrage als Baumdiagramm
+   Speicherung: komplett in der URL (Base64 + JSON), kein Backend nötig.
+   Jeder mit dem Link sieht denselben Stand. Updates erzeugen neuen Link.
+===================================================================== */
+
+// ---------- State ----------
+let state = {
+  nodes: {},   // { id: { id, parentId, edgeLabel, question, options:[{id,text,votes}], x, y } }
+  rootIds: []  // Reihenfolge der Wurzelknoten
+};
+
+let viewport = { x: 80, y: 100, zoom: 1 };
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let viewStart = { x: 0, y: 0 };
+let saveTimer = null;
+
+// ---------- Utility ----------
+const uid = () => Math.random().toString(36).slice(2, 9);
+const $ = (sel) => document.querySelector(sel);
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---------- Persistenz via URL ----------
+function encodeState() {
+  try {
+    const json = JSON.stringify(state);
+    // utf-8 safe base64
+    return btoa(unescape(encodeURIComponent(json)));
+  } catch (e) {
+    console.error(e);
+    return '';
+  }
+}
+function decodeState(str) {
+  try {
+    const json = decodeURIComponent(escape(atob(str)));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveToUrl() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const encoded = encodeState();
+    const url = new URL(window.location.href);
+    url.hash = 'd=' + encoded;
+    history.replaceState(null, '', url.toString());
+    // zusätzlich lokal cachen
+    try { localStorage.setItem('surfnturf:last', encoded); } catch (e) {}
+  }, 250);
+}
+
+function loadFromUrl() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#d=')) {
+    const decoded = decodeState(hash.slice(3));
+    if (decoded && decoded.nodes) {
+      state = decoded;
+      if (!state.rootIds) state.rootIds = [];
+      return true;
+    }
+  }
+  // fallback: localStorage
+  try {
+    const cached = localStorage.getItem('surfnturf:last');
+    if (cached) {
+      const decoded = decodeState(cached);
+      if (decoded && decoded.nodes) {
+        state = decoded;
+        if (!state.rootIds) state.rootIds = [];
+        return true;
+      }
+    }
+  } catch (e) {}
+  return false;
+}
+
+// ---------- Knoten/Optionen ----------
+function createNode({ parentId = null, edgeLabel = '', x = 100, y = 100 } = {}) {
+  const id = uid();
+  state.nodes[id] = {
+    id,
+    parentId,
+    edgeLabel,
+    question: '',
+    options: [
+      { id: uid(), text: '', votes: 0 },
+      { id: uid(), text: '', votes: 0 }
+    ],
+    x, y
+  };
+  if (!parentId) state.rootIds.push(id);
+  return id;
+}
+
+function deleteNode(id) {
+  // rekursiv alle Kinder löschen
+  Object.values(state.nodes)
+    .filter(n => n.parentId === id)
+    .forEach(child => deleteNode(child.id));
+  delete state.nodes[id];
+  state.rootIds = state.rootIds.filter(rid => rid !== id);
+}
+
+function getChildren(nodeId) {
+  return Object.values(state.nodes).filter(n => n.parentId === nodeId);
+}
+
+// Layout: Position eines neuen Kindknotens automatisch bestimmen
+function nextChildPosition(parentId) {
+  const parent = state.nodes[parentId];
+  const siblings = getChildren(parentId);
+  const NODE_W = 280, NODE_H = 280, GAP_X = 100, GAP_Y = 60;
+  const x = parent.x + NODE_W + GAP_X;
+  const y = parent.y + siblings.length * (NODE_H + GAP_Y);
+  return { x, y };
+}
+
+// ---------- Render ----------
+function render() {
+  const canvas = $('#canvas');
+  const svg = $('#svg-edges');
+  // alle Knoten löschen außer SVG
+  [...canvas.querySelectorAll('.node')].forEach(n => n.remove());
+  svg.innerHTML = '';
+
+  const nodeIds = Object.keys(state.nodes);
+
+  // Hint zeigen wenn leer
+  $('#hint').style.display = nodeIds.length === 0 ? 'block' : 'none';
+
+  // Knoten rendern
+  nodeIds.forEach(id => {
+    const node = state.nodes[id];
+    const el = renderNode(node);
+    canvas.appendChild(el);
+  });
+
+  // Kanten zeichnen (nach DOM, damit wir Maße haben)
+  requestAnimationFrame(() => drawEdges());
+
+  // Analytics aktualisieren
+  renderAnalytics();
+
+  // Viewport anwenden
+  applyViewport();
+
+  saveToUrl();
+}
+
+function renderNode(node) {
+  const totalVotes = node.options.reduce((s, o) => s + o.votes, 0);
+  const isRoot = !node.parentId;
+
+  const el = document.createElement('div');
+  el.className = 'node' + (isRoot ? ' root' : '');
+  el.dataset.id = node.id;
+  el.style.left = node.x + 'px';
+  el.style.top = node.y + 'px';
+
+  // Tag
+  const tag = document.createElement('div');
+  tag.className = 'node-tag';
+  tag.innerHTML = `<span>${isRoot ? 'wurzel · frage' : 'verzweigung'}</span><span>${totalVotes} stimme${totalVotes === 1 ? '' : 'n'}</span>`;
+  el.appendChild(tag);
+
+  // Frage
+  const q = document.createElement('div');
+  q.className = 'node-question';
+  q.contentEditable = 'true';
+  q.spellcheck = false;
+  q.dataset.placeholder = 'Wohin soll die Reise gehen?';
+  q.textContent = node.question;
+  q.addEventListener('input', () => {
+    node.question = q.textContent;
+    saveToUrl();
+    renderAnalytics();
+  });
+  q.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); q.blur(); }
+  });
+  el.appendChild(q);
+
+  // Optionen
+  const optsWrap = document.createElement('div');
+  optsWrap.className = 'options';
+  node.options.forEach(opt => {
+    optsWrap.appendChild(renderOption(node, opt, totalVotes));
+  });
+  el.appendChild(optsWrap);
+
+  // Aktionen (nur Löschen)
+  const actions = document.createElement('div');
+  actions.className = 'node-actions';
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'mini-btn danger';
+  delBtn.textContent = '× knoten';
+  delBtn.onclick = () => {
+    if (confirm('Knoten und alle Verzweigungen wirklich löschen?')) {
+      deleteNode(node.id);
+      render();
+    }
+  };
+  actions.appendChild(delBtn);
+
+  el.appendChild(actions);
+
+  // Drag-Verhalten am Tag (Kopfbereich)
+  makeDraggable(el, tag, node);
+
+  return el;
+}
+
+function renderOption(node, opt, totalVotes) {
+  const optEl = document.createElement('div');
+  optEl.className = 'option';
+  if (opt.votes > 0) optEl.classList.add('voted');
+
+  // Hintergrundbalken (Anteil)
+  const pct = totalVotes > 0 ? (opt.votes / totalVotes) * 100 : 0;
+  const bar = document.createElement('div');
+  bar.className = 'option-bar';
+  bar.style.width = pct + '%';
+  optEl.appendChild(bar);
+
+  // Klick = Stimme abgeben (außer wenn Text fokussiert)
+  optEl.addEventListener('click', (e) => {
+    if (e.target.classList.contains('option-text')) return;
+    if (e.target.closest('.option-actions')) return;
+    opt.votes += 1;
+    render();
+  });
+
+  // Text editierbar
+  const text = document.createElement('div');
+  text.className = 'option-text';
+  text.contentEditable = 'true';
+  text.spellcheck = false;
+  text.dataset.placeholder = 'Antwort eingeben…';
+  text.textContent = opt.text;
+  text.addEventListener('click', e => e.stopPropagation());
+  text.addEventListener('input', () => {
+    opt.text = text.textContent;
+    saveToUrl();
+    // Edge-Label aktualisieren
+    drawEdges();
+    renderAnalytics();
+  });
+  text.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); text.blur(); }
+  });
+  optEl.appendChild(text);
+
+  // Aktionen: Verzweigung erstellen, Stimme zurück, löschen
+  const actions = document.createElement('div');
+  actions.className = 'option-actions';
+
+  const branchBtn = document.createElement('button');
+  branchBtn.className = 'option-btn';
+  branchBtn.title = 'Folgefrage erstellen (Verzweigung)';
+  branchBtn.innerHTML = '⎘';
+  branchBtn.onclick = (e) => {
+    e.stopPropagation();
+    const existing = getChildren(node.id).find(c => c.edgeLabel === opt.id);
+    if (existing) {
+      toast('Es gibt bereits eine Verzweigung für diese Option');
+      return;
+    }
+    const pos = nextChildPosition(node.id);
+    const newId = createNode({ parentId: node.id, edgeLabel: opt.id, x: pos.x, y: pos.y });
+    render();
+    // kurz hervorheben durch Scrollen
+    setTimeout(() => focusNode(newId), 50);
+  };
+  actions.appendChild(branchBtn);
+
+  const minusBtn = document.createElement('button');
+  minusBtn.className = 'option-btn';
+  minusBtn.title = 'Stimme zurücknehmen';
+  minusBtn.innerHTML = '−';
+  minusBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (opt.votes > 0) { opt.votes -= 1; render(); }
+  };
+  actions.appendChild(minusBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'option-btn danger';
+  delBtn.title = 'Option löschen';
+  delBtn.innerHTML = '×';
+  delBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (node.options.length <= 1) { toast('Mindestens eine Option muss bleiben'); return; }
+    // Kindknoten der Option auch löschen
+    const child = getChildren(node.id).find(c => c.edgeLabel === opt.id);
+    if (child) deleteNode(child.id);
+    node.options = node.options.filter(o => o.id !== opt.id);
+    render();
+  };
+  actions.appendChild(delBtn);
+
+  // Anzahl
+  const count = document.createElement('div');
+  count.className = 'option-count';
+  count.textContent = opt.votes;
+
+  optEl.appendChild(actions);
+  optEl.appendChild(count);
+
+  return optEl;
+}
+
+// ---------- Edges ----------
+function drawEdges() {
+  const svg = $('#svg-edges');
+  svg.innerHTML = '';
+
+  // Größe des SVG anpassen, damit alle Pfade sichtbar sind
+  let maxX = 2000, maxY = 2000;
+  Object.values(state.nodes).forEach(n => {
+    maxX = Math.max(maxX, n.x + 400);
+    maxY = Math.max(maxY, n.y + 500);
+  });
+  svg.setAttribute('width', maxX);
+  svg.setAttribute('height', maxY);
+
+  const NODE_W = 280;
+
+  Object.values(state.nodes).forEach(node => {
+    if (!node.parentId) return;
+    const parent = state.nodes[node.parentId];
+    if (!parent) return;
+
+    // Position der Option im Parent finden
+    const parentEl = document.querySelector(`.node[data-id="${parent.id}"]`);
+    const childEl = document.querySelector(`.node[data-id="${node.id}"]`);
+    if (!parentEl || !childEl) return;
+
+    const optEl = parentEl.querySelector(`.option`); // fallback
+    let optY = parent.y + 120;
+    // genauere Y-Position: Index der Option finden
+    const optIdx = parent.options.findIndex(o => o.id === node.edgeLabel);
+    const opt = parent.options[optIdx];
+    if (optIdx >= 0) {
+      // node-tag ~28, question ~50, paddings ~16+16, jede option ~38
+      const optionEls = parentEl.querySelectorAll('.option');
+      if (optionEls[optIdx]) {
+        const rect = optionEls[optIdx].getBoundingClientRect();
+        const parentRect = parentEl.getBoundingClientRect();
+        // relative y in canvas-koordinaten
+        optY = parent.y + (rect.top - parentRect.top) + rect.height / 2;
+      }
+    }
+
+    const startX = parent.x + NODE_W;
+    const startY = optY;
+    const endX = node.x;
+    const endY = node.y + 30;
+
+    // Bezier
+    const dx = (endX - startX) * 0.5;
+    const path = `M ${startX} ${startY} C ${startX + dx} ${startY}, ${endX - dx} ${endY}, ${endX} ${endY}`;
+
+    const isActive = opt && opt.votes > 0;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', path);
+    line.setAttribute('class', 'edge-line' + (isActive ? ' active' : ''));
+    svg.appendChild(line);
+
+    // Label mit Stimmenzahl
+    if (opt) {
+      const labelText = `${opt.votes}× ${opt.text || '…'}`.slice(0, 24);
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+
+      // Hintergrund-Rect
+      const tempText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tempText.setAttribute('class', 'edge-label');
+      tempText.textContent = labelText;
+      svg.appendChild(tempText);
+      const bbox = tempText.getBBox();
+      svg.removeChild(tempText);
+
+      const padX = 8, padY = 4;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', midX - bbox.width / 2 - padX);
+      rect.setAttribute('y', midY - bbox.height / 2 - padY);
+      rect.setAttribute('width', bbox.width + padX * 2);
+      rect.setAttribute('height', bbox.height + padY * 2);
+      rect.setAttribute('rx', 6);
+      rect.setAttribute('class', 'edge-label-bg' + (isActive ? ' active' : ''));
+      svg.appendChild(rect);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', midX);
+      text.setAttribute('y', midY);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('class', 'edge-label');
+      if (isActive) text.setAttribute('fill', 'var(--accent)');
+      text.textContent = labelText;
+      svg.appendChild(text);
+    }
+  });
+}
+
+// ---------- Drag & Drop für Knoten ----------
+function makeDraggable(el, handle, node) {
+  let dragging = false;
+  let start = { x: 0, y: 0 };
+  let nodeStart = { x: 0, y: 0 };
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return;
+    if (e.target.closest('[contenteditable]')) return;
+    dragging = true;
+    start = { x: e.clientX, y: e.clientY };
+    nodeStart = { x: node.x, y: node.y };
+    el.style.zIndex = 50;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  handle.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button')) return;
+    if (e.target.closest('[contenteditable]')) return;
+    dragging = true;
+    const t = e.touches[0];
+    start = { x: t.clientX, y: t.clientY };
+    nodeStart = { x: node.x, y: node.y };
+    el.style.zIndex = 50;
+  }, { passive: true });
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const point = e.touches ? e.touches[0] : e;
+    const dx = (point.clientX - start.x) / viewport.zoom;
+    const dy = (point.clientY - start.y) / viewport.zoom;
+    node.x = nodeStart.x + dx;
+    node.y = nodeStart.y + dy;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+    drawEdges();
+  };
+
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    el.style.zIndex = '';
+    saveToUrl();
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  document.addEventListener('touchmove', onMove, { passive: true });
+  document.addEventListener('touchend', onUp);
+}
+
+// ---------- Viewport (Pan & Zoom) ----------
+function applyViewport() {
+  const canvas = $('#canvas');
+  canvas.style.transform = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`;
+  $('#zoom-display').textContent = Math.round(viewport.zoom * 100) + '%';
+}
+
+const wrap = $('#canvas-wrap');
+wrap.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.node')) return;
+  isPanning = true;
+  panStart = { x: e.clientX, y: e.clientY };
+  viewStart = { x: viewport.x, y: viewport.y };
+  wrap.classList.add('panning');
+});
+document.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  viewport.x = viewStart.x + (e.clientX - panStart.x);
+  viewport.y = viewStart.y + (e.clientY - panStart.y);
+  applyViewport();
+});
+document.addEventListener('mouseup', () => {
+  isPanning = false;
+  wrap.classList.remove('panning');
+});
+
+// Touch-Pan
+wrap.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.node')) return;
+  if (e.touches.length !== 1) return;
+  isPanning = true;
+  panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  viewStart = { x: viewport.x, y: viewport.y };
+}, { passive: true });
+document.addEventListener('touchmove', (e) => {
+  if (!isPanning || e.touches.length !== 1) return;
+  viewport.x = viewStart.x + (e.touches[0].clientX - panStart.x);
+  viewport.y = viewStart.y + (e.touches[0].clientY - panStart.y);
+  applyViewport();
+}, { passive: true });
+document.addEventListener('touchend', () => { isPanning = false; });
+
+// Wheel-Zoom
+wrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  zoomAt(viewport.zoom * (1 + delta), e.clientX, e.clientY);
+}, { passive: false });
+
+function zoomAt(newZoom, cx, cy) {
+  newZoom = Math.max(0.3, Math.min(2, newZoom));
+  const rect = wrap.getBoundingClientRect();
+  const px = cx - rect.left;
+  const py = cy - rect.top;
+  // Punkt im Canvas vor zoom
+  const bx = (px - viewport.x) / viewport.zoom;
+  const by = (py - viewport.y) / viewport.zoom;
+  viewport.zoom = newZoom;
+  viewport.x = px - bx * viewport.zoom;
+  viewport.y = py - by * viewport.zoom;
+  applyViewport();
+}
+
+$('#zoom-in').onclick = () => {
+  const r = wrap.getBoundingClientRect();
+  zoomAt(viewport.zoom * 1.2, r.left + r.width / 2, r.top + r.height / 2);
+};
+$('#zoom-out').onclick = () => {
+  const r = wrap.getBoundingClientRect();
+  zoomAt(viewport.zoom / 1.2, r.left + r.width / 2, r.top + r.height / 2);
+};
+
+function fitView() {
+  const ids = Object.keys(state.nodes);
+  if (ids.length === 0) {
+    viewport = { x: 80, y: 100, zoom: 1 };
+    applyViewport();
+    return;
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  Object.values(state.nodes).forEach(n => {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + 280);
+    maxY = Math.max(maxY, n.y + 280);
+  });
+  const w = maxX - minX, h = maxY - minY;
+  const rect = wrap.getBoundingClientRect();
+  const padding = 80;
+  const zoomX = (rect.width - padding * 2) / w;
+  const zoomY = (rect.height - padding * 2) / h;
+  viewport.zoom = Math.min(1, Math.min(zoomX, zoomY));
+  viewport.x = -minX * viewport.zoom + (rect.width - w * viewport.zoom) / 2;
+  viewport.y = -minY * viewport.zoom + (rect.height - h * viewport.zoom) / 2;
+  applyViewport();
+}
+
+function focusNode(id) {
+  const n = state.nodes[id];
+  if (!n) return;
+  const rect = wrap.getBoundingClientRect();
+  viewport.x = -n.x * viewport.zoom + rect.width / 2 - 140 * viewport.zoom;
+  viewport.y = -n.y * viewport.zoom + rect.height / 2 - 140 * viewport.zoom;
+  applyViewport();
+}
+
+// ---------- Analytics ----------
+function renderAnalytics() {
+  const c = $('#analytics-content');
+  const nodes = Object.values(state.nodes);
+  if (nodes.length === 0) {
+    c.innerHTML = '<p style="color:var(--text-faint);font-size:13px;">Noch keine Daten. Erstelle eine Frage, um zu starten.</p>';
+    return;
+  }
+
+  let totalVotes = 0;
+  let totalQuestions = nodes.length;
+  let answeredQuestions = 0;
+  let totalOptions = 0;
+
+  nodes.forEach(n => {
+    const sum = n.options.reduce((s, o) => s + o.votes, 0);
+    totalVotes += sum;
+    totalOptions += n.options.length;
+    if (sum > 0) answeredQuestions += 1;
+  });
+
+  let html = `
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-value">${totalVotes}</div>
+        <div class="stat-label">stimmen total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${totalQuestions}</div>
+        <div class="stat-label">fragen</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${answeredQuestions}/${totalQuestions}</div>
+        <div class="stat-label">beantwortet</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${totalOptions}</div>
+        <div class="stat-label">optionen</div>
+      </div>
+    </div>
+    <div class="leader-section">
+      <h4>Führende Antworten pro Frage</h4>
+  `;
+
+  nodes.forEach(n => {
+    const sum = n.options.reduce((s, o) => s + o.votes, 0);
+    if (sum === 0) return;
+    const sorted = [...n.options].sort((a, b) => b.votes - a.votes);
+    const qText = n.question || '(unbenannte Frage)';
+    html += `<div class="leader"><div class="leader-q">${escapeHtml(qText)}</div>`;
+    sorted.forEach((opt, i) => {
+      const pct = sum > 0 ? (opt.votes / sum) * 100 : 0;
+      html += `
+        <div class="leader-bar-row">
+          <div class="leader-label">${escapeHtml(opt.text || '…')}</div>
+          <div class="leader-bar-bg"><div class="leader-bar-fill ${i > 0 ? 'dim' : ''}" style="width:${pct}%"></div></div>
+          <div class="leader-num">${opt.votes}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  });
+
+  if (answeredQuestions === 0) {
+    html += `<p style="color:var(--text-faint);font-size:13px;">Noch keine Stimmen. Klicke auf eine Antwortoption, um abzustimmen.</p>`;
+  }
+
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Header buttons ----------
+$('#btn-add-root').onclick = () => {
+  const rect = wrap.getBoundingClientRect();
+  // platzieren in sichtbarer Mitte
+  const cx = (rect.width / 2 - viewport.x) / viewport.zoom;
+  const cy = (rect.height / 2 - viewport.y) / viewport.zoom;
+  const id = createNode({ x: cx - 140, y: cy - 100 });
+  render();
+  setTimeout(() => {
+    const el = document.querySelector(`.node[data-id="${id}"] .node-question`);
+    if (el) el.focus();
+  }, 50);
+};
+
+$('#btn-fit').onclick = fitView;
+
+$('#btn-reset').onclick = () => {
+  if (Object.keys(state.nodes).length === 0) return;
+  if (confirm('Alle Knoten und Stimmen wirklich löschen?')) {
+    state = { nodes: {}, rootIds: [] };
+    render();
+    toast('Zurückgesetzt');
+  }
+};
+
+$('#btn-share').onclick = () => {
+  const url = window.location.href;
+  $('#share-url').value = url;
+  $('#share-modal').classList.add('open');
+  setTimeout(() => $('#share-url').select(), 100);
+};
+
+$('#share-close').onclick = () => $('#share-modal').classList.remove('open');
+$('#share-copy').onclick = async () => {
+  const input = $('#share-url');
+  try {
+    await navigator.clipboard.writeText(input.value);
+    toast('Link kopiert ✓');
+  } catch (e) {
+    input.select();
+    document.execCommand('copy');
+    toast('Link kopiert ✓');
+  }
+};
+$('#share-modal').addEventListener('click', (e) => {
+  if (e.target === $('#share-modal')) $('#share-modal').classList.remove('open');
+});
+
+// Analytics-Toggle
+$('#analytics-toggle').onclick = () => {
+  $('#analytics').classList.toggle('open');
+};
+
+// ---------- Init ----------
+function init() {
+  const loaded = loadFromUrl();
+  if (!loaded) {
+    // Demo-Inhalt für leeren Start
+    const id = createNode({ x: 80, y: 80 });
+    state.nodes[id].question = 'Wohin soll der Urlaub gehen?';
+    state.nodes[id].options = [
+      { id: uid(), text: 'Mallorca', votes: 0 },
+      { id: uid(), text: 'Norwegen', votes: 0 },
+      { id: uid(), text: 'Roadtrip Italien', votes: 0 }
+    ];
+  }
+  render();
+  // bei Hash-Änderung (z.B. zurück-Button) neu laden
+  window.addEventListener('hashchange', () => {
+    if (loadFromUrl()) render();
+  });
+  // Analytics standardmäßig geschlossen, aber öffnen sobald Daten da sind und nicht mobil
+  if (window.innerWidth > 640 && Object.keys(state.nodes).length > 0) {
+    $('#analytics').classList.add('open');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
